@@ -7,12 +7,15 @@ from chat.models import CustomToken
 from django.http import JsonResponse
 
 
-def generate_custom_token(user, expiration_minutes=60):
+def generate_custom_token(user, expiration_minutes=1440):
     """
     :param user: 传入一个用户
-    :param expiration_minutes: 设置token过期时间默认是60分钟
+    :param expiration_minutes: 设置token过期时间默认是1天
     :return: 返回一个CustomToken对象,取其中的key，也就是token值
     """
+    token = CustomToken.objects.filter(user=user.id)
+    if token and token[0].expires_at > datetime.datetime.now():
+        return token[0].key
     key = ''.join(random.choices(string.ascii_letters + string.digits, k=40))
     expires_at = datetime.datetime.now() + datetime.timedelta(minutes=expiration_minutes)
     token, _ = CustomToken.objects.update_or_create(user=user, defaults={"key": key, "expires_at": expires_at})
@@ -39,7 +42,7 @@ class CustomTokenMiddleware(MiddlewareMixin):
         path = request.path_info.lstrip('/')
 
         # 根据路径中是否包含 login 或 register 判断是否需要进行 Token 验证
-        if 'login' in path or 'register' in path:
+        if 'login' in path or 'register' in path or "istoken" in path:
             response = self.get_response(request)
             return response
 
@@ -47,13 +50,13 @@ class CustomTokenMiddleware(MiddlewareMixin):
         token = request.headers.get('Authorization', None)
 
         if not token:
-            return JsonResponse({'message': 'Token not provided.'}, status=400)
+            return JsonResponse(data={'message': 'Token not provided.'}, status=400)
 
         # 假设 token 为简单的字符串类型
         is_token_valid = validate_token(token)
-
+        print(is_token_valid)
         if not is_token_valid:
-            return JsonResponse({'message': 'Token is invalid or expired.'}, status=401)
+            return JsonResponse(data={'message': 'Token is invalid or expired.'}, status=401)
 
             # 如果 Token 有效，则继续请求
         response = self.get_response(request)
