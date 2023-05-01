@@ -1,8 +1,4 @@
-
-
-from django.urls import path,include
-
-from chat import views
+from django.urls import path, include
 
 urlpatterns = [
     path('api/', include("chat.urls"))

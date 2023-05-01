@@ -52,12 +52,15 @@ class CustomTokenMiddleware(MiddlewareMixin):
         if not token:
             return JsonResponse(data={'message': 'Token not provided.'}, status=400)
 
+        key = token.split()[1]
         # 假设 token 为简单的字符串类型
-        is_token_valid = validate_token(token)
-        print(is_token_valid)
+        is_token_valid = CustomToken.objects.filter(key=key)
         if not is_token_valid:
-            return JsonResponse(data={'message': 'Token is invalid or expired.'}, status=401)
-
+            return JsonResponse(data={'message': 'Token is invalid.'}, status=401)
+        elif is_token_valid[0].expires_at < datetime.datetime.now():
+            return JsonResponse(data={'message': 'Token is expired.'}, status=401)
+        else:
+            request.user = is_token_valid[0]
             # 如果 Token 有效，则继续请求
         response = self.get_response(request)
 

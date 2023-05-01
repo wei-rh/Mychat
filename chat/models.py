@@ -17,8 +17,30 @@ class CustomToken(models.Model):
     key = models.CharField(max_length=40, unique=True, verbose_name="token值")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     expires_at = models.DateTimeField(verbose_name="过期时间")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['key']),
+        ]
         db_table = "customtoken"
         verbose_name = "token表"
         verbose_name_plural = verbose_name
+
+class ChatHistory(models.Model):
+    uid = models.IntegerField(verbose_name="用户id")
+    sid = models.IntegerField(verbose_name="会话id")
+    user_input = models.TextField(verbose_name="用户提问时间")
+    bot_output = models.TextField(verbose_name="gpt响应时间")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    expires_at = models.DateTimeField(verbose_name="响应时间")
+
+    class Meta:
+        db_table = "chathistory"
+        verbose_name = "会话历史记录"
+        verbose_name_plural = verbose_name
+        indexes = [
+            models.Index(fields=['uid']),
+            models.Index(fields=['sid']),
+        ]
