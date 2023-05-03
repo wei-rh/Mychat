@@ -8,6 +8,7 @@ urlpatterns = [
     path('register/', views.Register.as_view(), name="register"),
     path('is_token/', views.Token_is_valid.as_view(), name="userList"),
     path('onechat/', gpt.OneChat.as_view(), name="OneChat"),
+    path('onechatstream/', gpt.OneChatStream.as_view(), name="OneChatStream"),
     path('recentrecords/', chathistory.RecentRecords.as_view(), name="recentrecords"),
     path('getlastsid/', chathistory.GetLastSid.as_view(), name="getlastsid"),
 ]

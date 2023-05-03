@@ -29,3 +29,4 @@ class Token_is_valid(APIView):
     def get(self, request):
         # 将所有用户序列化为一个列表
         return Response(data={"valid":True}, status=status.HTTP_200_OK)
+
