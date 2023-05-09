@@ -12,7 +12,7 @@ class RecentRecords(APIView):
 
         page = int(request.GET.get('page', 0))
         print(page)
-        uid = request.user.user_id
+        uid = request.user.id
         sid = request.data.get('sid', 0)
         start = page * 6
         end = (page + 1) * 6
@@ -25,7 +25,7 @@ class RecentRecords(APIView):
 
 class GetLastSid(APIView):
     def get(self, request):
-        uid = request.user.user_id
+        uid = request.user.id
         print(uid)
         chat_history = ChatHistory.objects.filter(uid=uid).order_by('expires_at')[:1]
         print(chat_history)

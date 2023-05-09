@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
 from pathlib import Path
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'chat.apps.ChatConfig',
     'rest_framework',
+    'rest_framework_simplejwt', # 新增
     'corsheaders'
 ]
 MIGRATION_MODULES = {
@@ -49,12 +50,12 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # 跨域
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "chat.middlewares.CustomTokenMiddleware",
-    'chat.middlewares.NotUseCsrfTokenMiddlewareMixin'
+    # "chat.middlewares.CustomTokenMiddleware",
+    # 'chat.middlewares.NotUseCsrfTokenMiddlewareMixin'
 
 
 ]
@@ -136,22 +137,33 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50,
-    "DATETIME_FORMAT": "%Y-%m-%d %H:%M:%S",
-    "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
-        "rest_framework.renderers.BrowsableAPIRenderer",
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
-    "DEFAULT_PARSER_CLASSES": [  # 解析request.data
-        "rest_framework.parsers.JSONParser",
-        "rest_framework.parsers.FormParser",
-        "rest_framework.parsers.MultiPartParser",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'chat.utils.jwt.MyJWTAuthentication' # 认证方式为自定义的认证类
     ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-    ]
+}
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(seconds=10),  # 访问令牌的有效时间
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=20),  # 刷新令牌的有效时间
+    "ROTATE_REFRESH_TOKENS": False,  # 若为True，则刷新后新的refresh_token有更新的有效时间
+    "BLACKLIST_AFTER_ROTATION": True,  # 若为True，刷新后的token将添加到黑名单中,
+    "ALGORITHM": "HS256",  # 对称算法：HS256 HS384 HS512  非对称算法：RSA
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,  # if signing_key, verifying_key will be ignore.
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Authorization: Bearer <token>
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",  # if HTTP_X_ACCESS_TOKEN, X_ACCESS_TOKEN: Bearer <token>
+    "USER_ID_FIELD": "id",  # 使用唯一不变的数据库字段,将包含在生成的令牌中以标识用户
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),   # default: access
+    "TOKEN_TYPE_CLAIM": "token_type",         # 用于存储令牌唯一标识符的声明名称 value:"access","sliding","refresh"
+    "JTI_CLAIM": "jti",
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",     # 滑动令牌是既包含到期声明又包含刷新到期声明的令牌
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),       # 只要滑动令牌的到期声明中的时间戳未通过，就可以用来证明身份验证
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),  # path("token|refresh", TokenObtainSlidingView.as_view())
 }
 
 # 跨域增加忽略
@@ -159,16 +171,6 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = ()
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_METHODS = (
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-    'VIEW',
-)
-
 CORS_ALLOW_HEADERS = (
     'accept',
     'accept-encoding',

@@ -5,16 +5,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import ChatHistory
 import openai
-
+from rest_framework import serializers
 openai.api_key = "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"
 
 class OneChat(APIView):
     def post(self, request):
-        use_id = request.user.user_id
+        use_id = request.user.id
         session_id = request.data.get('sid', 0)
         input_text = request.data.get('input_text', 0)
         history_page = request.data.get('history_page', 5)
         is_stream = request.data.get('is_stream', False)
+        print(use_id, session_id, input_text, history_page, is_stream)
         messages = []
         if is_stream:
             chat_history = ChatHistory.objects.filter(sid=session_id, uid=use_id).order_by('-expires_at')[0:history_page]
@@ -31,7 +32,7 @@ class OneChat(APIView):
                 temperature=0.1
             )
         except Exception as e:
-            return Response(data={"answer": "请求超时"}, status=500)
+            raise serializers.ValidationError("请求超时！")
         else:
             output_text = completion.choices[0].message.content
             expires_time = datetime.datetime.now()
@@ -43,7 +44,7 @@ class OneChat(APIView):
 
 class OneChatStream(APIView):
     def post(self, request):
-        use_id = request.user.user_id
+        use_id = request.user.id
         session_id = request.data.get('sid', 0)
         input_text = request.data.get('input_text', 0)
         create_time = datetime.datetime.now()
